@@ -1,7 +1,23 @@
+import plotly.graph_objects as go
 import numpy as np
+import scipy.spatial.distance
 import math
 import random
 import torch
+
+def add_noise(arr):
+    noise = np.random.normal(0,0.02,(arr.shape))
+    return (arr+noise)
+
+def cent_norm(arr_in):
+    mean = np.mean(arr_in, axis=0)
+    verts_centered = arr_in - mean
+    max_point = 0
+    for row in verts_centered:
+        if (np.linalg.norm(row)> max_point):
+            max_point = np.linalg.norm(row)
+    verts_normalized = verts_centered/max_point   
+    return verts_normalized
 
 
 def read_off(file):
@@ -12,7 +28,18 @@ def read_off(file):
     faces = [[int(s) for s in file.readline().strip().split(' ')][1:] for i_face in range(n_faces)]
     return verts, faces
     
-    
+
+
+def rotation_z(arr,theta):
+    theta = theta * math.pi/180
+    rot = np.array([[ math.cos(theta), -math.sin(theta), 0],
+                   [ math.sin(theta), math.cos(theta), 0],
+                   [0, 0, 1]])
+    arr_rot = rot.dot(arr.transpose()).transpose()
+    return arr_rot
+
+
+
 class PointSampler(object):
     def __init__(self, output_size):
         assert isinstance(output_size, int)
@@ -77,7 +104,8 @@ class RandRotation_z(object):
         
         rot_pointcloud = rot_matrix.dot(pointcloud.T).T
         return  rot_pointcloud
-    
+
+
 class RandomNoise(object):
     def __call__(self, pointcloud):
         assert len(pointcloud.shape)==2
